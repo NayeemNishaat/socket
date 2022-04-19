@@ -19,13 +19,13 @@ function sendTime() {
 }
 setInterval(sendTime, 100000);
 
-// Part: Listening from and Responsing to Client
+// Part: Listening Global "connection" Event and Responsing to Client
 io.on("connection", function (socket) {
     // Key: Sending Local Events to Client
     socket.emit("welcome", { message: "Welcome!", id: socket.id });
 
     // Part: Listening for Local Events from Client
-    socket.on("client", console.log);
+    socket.on("client", console.log); // Note: console.log is a callback function/method here that will be called by socket with the received parameter!
 
     // Key: Listening Local Events
     socket.on("delete", () => {
