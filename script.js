@@ -4,13 +4,14 @@ const socket = io("http://127.0.0.1:3001/"); // Remark: For different Domain
 // const socket = io(); // Remark: For Same Domain
 
 // Segment: DOM Elemenets
-const btn1 = document.getElementById("btn--1");
+const btn = document.querySelector("button");
+const messages = document.querySelector("ul");
+const nameEl = document.getElementById("name");
 
 // Segment: DOM Operations
-function addMessage(message) {
-    const text = document.createTextNode(message),
-        el = document.createElement("li"),
-        messages = document.getElementById("messages");
+function sendMessage(message) {
+    const text = document.createTextNode(message);
+    const el = document.createElement("li");
 
     el.appendChild(text);
     messages.appendChild(el);
@@ -19,7 +20,7 @@ function addMessage(message) {
 // Segment: Socket
 // Key: Listening for Events from Server
 socket.on("welcome", function (data) {
-    addMessage(data.message);
+    sendMessage(data.message);
 
     // Key: Sending Response to Server
     socket.emit("new client", data.id);
@@ -27,19 +28,23 @@ socket.on("welcome", function (data) {
 
 // Key: Listening for Events from Server
 socket.on("time", function (data) {
-    addMessage(data.time);
+    sendMessage(data.time);
 });
 
 // Key: Initiating Delete Request
-if (btn1) {
-    btn1.addEventListener("click", () => {
-        socket.emit("delete");
+if (btn) {
+    btn.addEventListener("click", (e) => {
+        e.preventDefault();
+
+        const name = nameEl.value;
+        const msg = btn.previousElementSibling.value;
+
+        socket.emit("send", name, msg);
     });
 }
 
-socket.on("deleted", (msg) => {
-    btn1.previousElementSibling?.remove();
-    addMessage(msg);
+socket.on("sent", (msg) => {
+    sendMessage(msg);
 });
 
 socket.on("error", console.error.bind(console));
