@@ -25,12 +25,16 @@ io.on("connection", function (socket) {
     socket.emit("welcome", { message: "Welcome!", id: socket.id });
 
     // Part: Listening for Local Events from Client
-    socket.on("client", console.log); // Note: console.log is a callback function/method here that will be called by socket with the received parameter!
+    socket.on("new client", console.log); // Note: console.log is a callback function/method here that will be called by socket with the received parameter!
+
+    socket.emit("specific", "Personal");
 
     // Key: Listening Local Events
     socket.on("delete", () => {
-        // Key: Sending Global Events to Clients
+        // Key: Sending Global Events to All Clients
         io.emit("deleted", "Deleted Successfully");
+        // Key: Sending Local Event to a Specific Client
+        // socket.emit("deleted", "Deleted Successfully");
     });
 });
 

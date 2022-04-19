@@ -22,7 +22,7 @@ socket.on("welcome", function (data) {
     addMessage(data.message);
 
     // Key: Sending Response to Server
-    socket.emit("client", data.id);
+    socket.emit("new client", data.id);
 });
 
 // Key: Listening for Events from Server
