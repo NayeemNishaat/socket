@@ -7,6 +7,7 @@ const socket = io("http://127.0.0.1:3001/"); // Remark: For different Domain
 const btn = document.querySelector("button");
 const messages = document.querySelector("ul");
 const nameEl = document.getElementById("name");
+const paragraphEl = document.querySelector("p");
 
 // Segment: DOM Operations
 function sendMessage(message) {
@@ -18,18 +19,23 @@ function sendMessage(message) {
 }
 
 // Segment: Socket
+let users;
+let me;
+
 // Key: Listening for Events from Server
 socket.on("welcome", function (data) {
 	sendMessage(data.message);
 
 	// Key: Sending Response to Server
 	socket.emit("new client", data.id);
+	me = data.id;
 });
 
 // Key: Listening for Events from Server
 socket.on("time", function (data) {
 	sendMessage(data.time);
-	console.log(data.users);
+	users = data.users;
+	console.log(users);
 });
 
 // Key: Initiating Delete Request
@@ -40,13 +46,15 @@ if (btn) {
 		const name = nameEl.value;
 		const msg = btn.previousElementSibling.value;
 
-		socket.emit("send", name, msg);
+		socket.emit("send", name, msg, users.filter((u) => u !== me)[0]);
 	});
 }
 
 socket.on("sent", (msg) => {
 	sendMessage(msg);
 });
+
+socket.on("private", console.log);
 
 socket.on("error", console.error.bind(console));
 socket.on("message", console.log.bind(console));
