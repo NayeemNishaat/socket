@@ -38,12 +38,17 @@ io.on("connection", function (socket) {
 	socket.on("new client", console.log); // Note: console.log is a callback function/method here that will be called by socket with the received parameter!
 
 	// Key: Listening Local Events
-	socket.on("send", (name, msg, to) => {
+	socket.on("send", (name, msg) => {
 		// Key: Sending Global Events to All Clients
-		io.to(to).emit("private", `${name}: ${msg}`);
-		// io.emit("sent", `${name}: ${msg}`);
+		io.emit("sent", `${name}: ${msg}`);
 		// Key: Sending Local Event to a Specific Client
 		// socket.emit("deleted", "Deleted Successfully");
+	});
+
+	// Listening for Private Messages
+	socket.on("sendPrivate", (name, msg, to) => {
+		// Key: Sending Private Events to a Specific User
+		io.to(to).emit("private", `${name}: ${msg}`);
 	});
 });
 

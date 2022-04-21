@@ -5,17 +5,18 @@ const socket = io("http://127.0.0.1:3001/"); // Remark: For different Domain
 
 // Segment: DOM Elemenets
 const btn = document.querySelector("button");
+const pmEl = document.getElementById("pm");
 const messages = document.querySelector("ul");
 const nameEl = document.getElementById("name");
 const paragraphEl = document.querySelector("p");
 
 // Segment: DOM Operations
-function sendMessage(message) {
+function sendMessage(message, renderEl = messages) {
 	const text = document.createTextNode(message);
 	const el = document.createElement("li");
 
 	el.appendChild(text);
-	messages.appendChild(el);
+	renderEl.appendChild(el);
 }
 
 // Segment: Socket
@@ -35,7 +36,7 @@ socket.on("welcome", function (data) {
 socket.on("time", function (data) {
 	sendMessage(data.time);
 	users = data.users;
-	console.log(users);
+	// console.log(users);
 });
 
 // Key: Initiating Delete Request
@@ -46,7 +47,18 @@ if (btn) {
 		const name = nameEl.value;
 		const msg = btn.previousElementSibling.value;
 
-		socket.emit("send", name, msg, users.filter((u) => u !== me)[0]);
+		socket.emit("send", name, msg);
+	});
+}
+
+if (pm) {
+	pm.addEventListener("click", (e) => {
+		e.preventDefault();
+
+		const name = nameEl.value;
+		const msg = btn.previousElementSibling.value;
+
+		socket.emit("sendPrivate", name, msg, users.filter((u) => u !== me)[0]);
 	});
 }
 
@@ -54,7 +66,7 @@ socket.on("sent", (msg) => {
 	sendMessage(msg);
 });
 
-socket.on("private", console.log);
+socket.on("private", (msg) => sendMessage(msg, paragraphEl));
 
 socket.on("error", console.error.bind(console));
 socket.on("message", console.log.bind(console));
