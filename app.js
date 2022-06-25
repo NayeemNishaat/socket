@@ -35,18 +35,29 @@ httpServer.on("upgrade", (req, socket, head) => {
 			`Sec-WebSocket-Accept: ${hashedKey}\r\n` +
 			"\r\n"
 	);
-	// socket.pipe(socket);
-	// socket.on("data", (data) => {
-	// 	console.log(Buffer.from(data).toString());
-	// 	socket.emit("message", "Hello World");
-	// });
-	// console.log(socket);
 
-	// req.on("upgrade", (res, socket, upgradeHead) => {
-	// 	console.log("got upgraded!");
-	// 	socket.end();
-	// 	// process.exit(0);
-	// });
+	socket.on("data", (data) => {
+		const decodeData = (data) => {
+			const datalength = data[1] & 127; //Note: Anding with 127 to get the data length
+			let indexFirstMask = 2;
+			if (datalength === 126) {
+				indexFirstMask = 4;
+			} else if (datalength === 127) {
+				indexFirstMask = 10;
+			}
+
+			const masks = data.slice(indexFirstMask, indexFirstMask + 4);
+			let i = indexFirstMask + 4;
+			let index = 0;
+			let output = "";
+			while (i < data.length) {
+				output += String.fromCharCode(data[i++] ^ masks[index++ % 4]);
+			}
+			return output;
+		};
+		const decodedData = decodeData(data);
+		console.log(decodedData);
+	});
 });
 
 // Remark: Simulate a http request via vanilla nodejs
