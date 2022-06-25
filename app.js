@@ -1,55 +1,70 @@
-const express = require("express");
-const { createServer } = require("http");
-const { Server } = require("socket.io");
+const http = require("node:http");
+const crypto = require("node:crypto");
 
-// Segment: Create Server
-const app = express();
-const httpServer = createServer(app);
-const io = new Server(httpServer, {
-	cors: {
-		// origin: "http://127.0.0.1:8080" // Point: The allowed origin
-		origin: "*"
-	}
+const httpServer = http.createServer(function (req, res) {
+	let data = "";
+	req.on("data", (chunk) => {
+		data += chunk;
+	});
+
+	req.on("end", () => {
+		console.log(JSON.parse(data));
+	});
+
+	res.writeHead(200, { "Content-Type": "application/json" });
+
+	res.write(JSON.stringify({ status: "success" }));
+	res.end();
 });
 
-const connected = [];
+// Important: For upgrading the connection the request should have the following headers -> {Connection: Upgrade, Upgrade: websocket}
+httpServer.on("upgrade", (req, socket, head) => {
+	const websocketKey =
+		req.headers["sec-websocket-key"] +
+		`258EAFA5-E914-47DA-95CA-C5AB0DC85B11`;
 
-// Segment: Socket
-// Part: Sending Global Events
-function sendTime() {
-	io.emit("time", {
-		time: new Date().toJSON(),
-		users: connected
-	});
-}
-setInterval(sendTime, 10000);
+	const hashedKey = crypto
+		.createHash("sha1")
+		.update(websocketKey)
+		.digest("base64");
 
-// Part: Listening Global "connection" Event and Responsing to Client
-io.on("connection", function (socket) {
-	connected.push(socket.id);
+	socket.write(
+		"HTTP/1.1 101 Web Socket Protocol Handshake\r\n" +
+			"Upgrade: WebSocket\r\n" +
+			"Connection: Upgrade\r\n" +
+			`Sec-WebSocket-Accept: ${hashedKey}\r\n` +
+			"\r\n"
+	);
+	// socket.pipe(socket);
+	// socket.on("data", (data) => {
+	// 	console.log(Buffer.from(data).toString());
+	// 	socket.emit("message", "Hello World");
+	// });
+	// console.log(socket);
 
-	// Key: Sending Local Events to Client
-	socket.emit("welcome", {
-		message: "Welcome!",
-		id: socket.id
-	});
-
-	// Part: Listening for Local Events from Client
-	socket.on("new client", console.log); // Note: console.log is a callback function/method here that will be called by socket with the received parameter!
-
-	// Key: Listening Local Events
-	socket.on("send", (name, msg) => {
-		// Key: Sending Global Events to All Clients
-		io.emit("sent", `${name}: ${msg}`);
-		// Key: Sending Local Event to a Specific Client
-		// socket.emit("deleted", "Deleted Successfully");
-	});
-
-	// Listening for Private Messages
-	socket.on("sendPrivate", (name, msg, to) => {
-		// Key: Sending Private Events to a Specific User
-		io.to(to).emit("private", `${name}: ${msg}`);
-	});
+	// req.on("upgrade", (res, socket, upgradeHead) => {
+	// 	console.log("got upgraded!");
+	// 	socket.end();
+	// 	// process.exit(0);
+	// });
 });
 
-httpServer.listen(3001);
+// Remark: Simulate a http request via vanilla nodejs
+// const options = {
+// 	port: 1111,
+// 	host: "127.0.0.1",
+// 	headers: {
+// 		Connection: "Upgrade",
+// 		Upgrade: "websocket"
+// 	}
+// };
+// const req = http.request(options);
+// req.end();
+
+// httpServer.on("connection", (stream) => {
+// 	console.log(stream);
+// });
+
+httpServer.listen(1111, () => {
+	console.log("Server started at port 1111");
+});
