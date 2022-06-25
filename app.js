@@ -37,6 +37,7 @@ httpServer.on("upgrade", (req, socket, head) => {
 	);
 
 	socket.on("data", (data) => {
+		// Chapter: Decoding incoming messages
 		const decodeData = (data) => {
 			const datalength = data[1] & 127; //Note: Anding with 127 to get the data length
 			let indexFirstMask = 2;
@@ -47,7 +48,7 @@ httpServer.on("upgrade", (req, socket, head) => {
 			}
 
 			const masks = data.slice(indexFirstMask, indexFirstMask + 4);
-			let i = indexFirstMask + 4;
+			let i = indexFirstMask + 4; // Note: +4 because two bytes are the seperator between the mask and the data
 			let index = 0;
 			let output = "";
 			while (i < data.length) {
@@ -56,7 +57,37 @@ httpServer.on("upgrade", (req, socket, head) => {
 			return output;
 		};
 		const decodedData = decodeData(data);
-		console.log(decodedData);
+
+		// Chapter: Encoding outgoing messages
+		const encodeWebSocket = (data) => {
+			const bytesFormatted = new Array();
+			bytesFormatted[0] = 129;
+			if (data.length <= 125) {
+				bytesFormatted[1] = data.length;
+			} else if (data.length >= 126 && data.length <= 65535) {
+				bytesFormatted[1] = 126;
+				bytesFormatted[2] = (data.length >> 8) & 255; //Note: Shifting 8 bits to the right to get the first byte of the two bytes (two bytes because the length is between 126 and 65535)
+				bytesFormatted[3] = data.length & 255;
+			} else {
+				bytesFormatted[1] = 127;
+				bytesFormatted[2] = (data.length >> 56) & 255;
+				bytesFormatted[3] = (data.length >> 48) & 255;
+				bytesFormatted[4] = (data.length >> 40) & 255;
+				bytesFormatted[5] = (data.length >> 32) & 255;
+				bytesFormatted[6] = (data.length >> 24) & 255;
+				bytesFormatted[7] = (data.length >> 16) & 255;
+				bytesFormatted[8] = (data.length >> 8) & 255;
+				bytesFormatted[9] = data.length & 255;
+			}
+			for (let i = 0; i < data.length; i++) {
+				bytesFormatted.push(data.charCodeAt(i));
+			}
+
+			return Buffer.from(bytesFormatted);
+		};
+
+		const encodedData = encodeWebSocket("> " + decodedData);
+		socket.write(encodedData);
 	});
 });
 
