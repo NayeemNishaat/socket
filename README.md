@@ -1,2 +1,2 @@
 # Socket
-This is a pure basic socket.io example app!
+This is a pure basic WebSocker example with nodejs. You can get the basic idea about how WebSocket actually works from this.
